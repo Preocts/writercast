@@ -8,8 +8,8 @@
 
 *Note:* Will not run without effort on WSL2 instances. This is due to a lack of
 AF_UNIX interop for WSL2.  This can be worked around with socat and npiperelay.
-Perhapes this can be scripted in. WSL1 does not have this limitation. (reference
-link)[https://github.com/microsoft/WSL/issues/5961]
+Perhapes this can be scripted in. WSL1 does not have this limitation. [reference
+link](https://github.com/microsoft/WSL/issues/5961)
 
 ---
 
