@@ -7,6 +7,7 @@ from discordrp import Presence
 from secretbox import SecretBox
 
 APP_ID = SecretBox(auto_load=True).get("WRITERCAST_CAST_ID", "")
+REFRESH_RATE = 60  # seconds
 
 
 def timestamp_bookends() -> tuple[int, int]:
@@ -26,10 +27,11 @@ def main() -> int:
         while "The words flow from the fountain of inspiration":
             if datetime.now().day != day:
                 day = datetime.now().day
-                build_presence(day, presence)
                 print(f"Day {day} of 30")
 
-            time.sleep(15)
+            build_presence(day, presence)
+
+            time.sleep(REFRESH_RATE)
 
     except KeyboardInterrupt:
         print("Exiting...")
