@@ -2,12 +2,15 @@ from __future__ import annotations
 
 import time
 from datetime import datetime
+from typing import Any
 
 from discordrp import Presence
 from secretbox import SecretBox
 
 APP_ID = SecretBox(auto_load=True).get("WRITERCAST_CAST_ID", "")
 REFRESH_RATE = 60  # seconds
+WORD_COUNT = 6672
+WORD_GOAL = 50_000
 
 
 def timestamp_bookends() -> tuple[int, int]:
@@ -23,13 +26,18 @@ def main() -> int:
         presence = Presence(APP_ID)
         print("Starting WriterCast...")
         day = 0
+        start = 0
+        end = 0
 
         while "The words flow from the fountain of inspiration":
             if datetime.now().day != day:
+                presence.clear()
                 day = datetime.now().day
+                start, end = timestamp_bookends()
                 print(f"Day {day} of 30")
 
-            build_presence(day, presence)
+            payload = build_payload(day, start, end, WORD_COUNT, WORD_GOAL)
+            presence.set(payload)
 
             time.sleep(REFRESH_RATE)
 
@@ -42,30 +50,32 @@ def main() -> int:
     return 0
 
 
-def build_presence(day: int, presence: Presence) -> None:
+def build_payload(
+    day: int,
+    start: int,
+    end: int,
+    word_count: int,
+    word_goal: int,
+) -> dict[str, Any]:
     """Build the presence."""
-    start, end = timestamp_bookends()
-    presence.clear()
-    presence.set(
-        {
-            "state": f"Day {day} of 30",
-            "details": "NaNoWriMo 2023",
-            "timestamps": {
-                "start": start,
-                "end": end,
+    return {
+        "state": f"Day {day} of 30",
+        "details": f"NaNoWriMo ({word_count:,} / {word_goal:,} words)",
+        "timestamps": {
+            "start": start,
+            "end": end,
+        },
+        "assets": {
+            "large_image": "nanowrimo_logo",
+            "large_text": "NaNoWriMo 2023",
+        },
+        "buttons": [
+            {
+                "label": "NaNoWriMo",
+                "url": "https://nanowrimo.org",
             },
-            "assets": {
-                "large_image": "nanowrimo_logo",
-                "large_text": "NaNoWriMo 2023",
-            },
-            "buttons": [
-                {
-                    "label": "NaNoWriMo",
-                    "url": "https://nanowrimo.org",
-                },
-            ],
-        }
-    )
+        ],
+    }
 
 
 if __name__ == "__main__":
