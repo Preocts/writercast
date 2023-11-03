@@ -8,7 +8,7 @@ from discordrp import Presence
 from secretbox import SecretBox
 
 APP_ID = SecretBox(auto_load=True).get("WRITERCAST_CAST_ID", "")
-REFRESH_RATE = 60  # seconds
+REFRESH_RATE = 15  # seconds
 WORD_COUNT = 6672
 WORD_GOAL = 50_000
 
