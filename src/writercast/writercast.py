@@ -9,7 +9,6 @@ from secretbox import SecretBox
 
 APP_ID = SecretBox(auto_load=True).get("WRITERCAST_CAST_ID", "")
 REFRESH_RATE = 15  # seconds
-WORD_COUNT = 6672
 WORD_GOAL = 50_000
 
 
@@ -18,6 +17,14 @@ def timestamp_bookends() -> tuple[int, int]:
     start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     end = start.replace(hour=23, minute=59, second=59, microsecond=999999)
     return int(start.timestamp()), int(end.timestamp())
+
+
+def get_word_count() -> int:
+    try:
+        with open("wordcount.txt") as f:
+            return int(f.read())
+    except (FileNotFoundError, ValueError):
+        return 0
 
 
 def main() -> int:
@@ -36,7 +43,9 @@ def main() -> int:
                 start, end = timestamp_bookends()
                 print(f"Day {day} of 30")
 
-            payload = build_payload(day, start, end, WORD_COUNT, WORD_GOAL)
+            word_count = get_word_count()
+
+            payload = build_payload(day, start, end, word_count, WORD_GOAL)
             presence.set(payload)
 
             time.sleep(REFRESH_RATE)
