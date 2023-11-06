@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import dataclasses
+import datetime
+import sqlite3
 import time
-from datetime import datetime
 from typing import Any
 
 from discordrp import Presence
@@ -10,11 +12,12 @@ from secretbox import SecretBox
 APP_ID = SecretBox(auto_load=True).get("WRITERCAST_CAST_ID", "")
 REFRESH_RATE = 15  # seconds
 WORD_GOAL = 50_000
+DATABASE_PATH = "writercast.db"
 
 
 def timestamp_bookends() -> tuple[int, int]:
     """Return the start of today and the end of today as timestamps."""
-    start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    start = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     end = start.replace(hour=23, minute=59, second=59, microsecond=999999)
     return int(start.timestamp()), int(end.timestamp())
 
@@ -37,9 +40,9 @@ def main() -> int:
         end = 0
 
         while "The words flow from the fountain of inspiration":
-            if datetime.now().day != day:
+            if datetime.datetime.now().day != day:
                 presence.clear()
-                day = datetime.now().day
+                day = datetime.datetime.now().day
                 start, end = timestamp_bookends()
                 print(f"Day {day} of 30")
 
@@ -85,6 +88,58 @@ def build_payload(
             },
         ],
     }
+
+
+@dataclasses.dataclass(frozen=True)
+class DBRow:
+    timestamp: int
+    wordcount: int
+
+
+def _create_database_table(database: sqlite3.Connection) -> None:
+    """Create the database table."""
+    database.execute(
+        """
+        CREATE TABLE IF NOT EXISTS wordcount (
+            timestamp INTEGER PRIMARY KEY,
+            wordcount INTEGER NOT NULL
+        )
+        """
+    )
+
+
+def _add_wordcount(database: sqlite3.Connection, wordcount: int) -> None:
+    """Add a wordcount to the database."""
+    now = datetime.datetime.now(tz=datetime.timezone.utc)
+    cursor = database.cursor()
+    try:
+        cursor.execute(
+            """
+            INSERT INTO wordcount (timestamp, wordcount)
+            VALUES (?, ?)
+            """,
+            (int(now.timestamp()), wordcount),
+        )
+
+    finally:
+        cursor.close()
+
+
+def _get_wordcount(database: sqlite3.Connection) -> list[DBRow]:
+    """Get the wordcount from the database."""
+    cursor = database.cursor()
+    try:
+        cursor.execute(
+            """
+            SELECT timestamp, wordcount
+            FROM wordcount
+            ORDER BY timestamp DESC
+            """
+        )
+        return [DBRow(*row) for row in cursor.fetchall()]
+
+    finally:
+        cursor.close()
 
 
 if __name__ == "__main__":
