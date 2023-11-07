@@ -13,6 +13,7 @@ APP_ID = SecretBox(auto_load=True).get("WRITERCAST_CAST_ID", "")
 REFRESH_RATE = 15  # seconds
 WORD_GOAL = 50_000
 DATABASE_PATH = "writercast.db"
+MAX_RETRIES = 5
 
 
 def timestamp_bookends() -> tuple[int, int]:
@@ -32,32 +33,44 @@ def get_word_count() -> int:
 
 def main() -> int:
     """Run the main loop."""
-    try:
-        presence = Presence(APP_ID)
-        print("Starting WriterCast...")
-        day = 0
-        start = 0
-        end = 0
+    retry_count = 0
+    while "All the things that she said, running through my head":
+        try:
+            presence = Presence(APP_ID)
+            print("Starting WriterCast...")
+            day = 0
+            start = 0
+            end = 0
 
-        while "The words flow from the fountain of inspiration":
-            if datetime.datetime.now().day != day:
+            while "The words flow from the fountain of inspiration":
+                if datetime.datetime.now().day != day:
+                    day = datetime.datetime.now().day
+                    start, end = timestamp_bookends()
+                    print(f"Day {day} of 30")
+
+                word_count = get_word_count()
+
+                payload = build_payload(day, start, end, word_count, WORD_GOAL)
                 presence.clear()
-                day = datetime.datetime.now().day
-                start, end = timestamp_bookends()
-                print(f"Day {day} of 30")
+                presence.set(payload)
 
-            word_count = get_word_count()
+                time.sleep(REFRESH_RATE)
+                retry_count = 0
 
-            payload = build_payload(day, start, end, word_count, WORD_GOAL)
-            presence.set(payload)
-
+        except OSError:
+            print("Could not connect to Discord. Is Discord running?")
             time.sleep(REFRESH_RATE)
+            retry_count += 1
+            if retry_count > MAX_RETRIES:
+                print("Too many retries. Exiting...")
+                return 1
 
-    except KeyboardInterrupt:
-        print("Exiting...")
+        except KeyboardInterrupt:
+            print("Exiting...")
+            return 0
 
-    finally:
-        presence.close()
+        finally:
+            presence.close()
 
     return 0
 
